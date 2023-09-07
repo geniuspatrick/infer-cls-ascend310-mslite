@@ -7,8 +7,8 @@ import numpy as np
 
 def cal_acc_imagenet(dataset_path, results_path):
     labels = {}
-    for idx, subdir in enumerate(os.listdir(dataset_path)):
-        for filename in os.listdir(os.path.join(dataset_path, subdir)):
+    for idx, subdir in enumerate(sorted(os.listdir(dataset_path))):
+        for filename in sorted(os.listdir(os.path.join(dataset_path, subdir))):
             img_name = os.path.splitext(filename)[0]
             labels[img_name] = idx
     print(f"The number of images: {len(labels)}")
