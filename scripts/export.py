@@ -12,4 +12,4 @@ if __name__ == "__main__":
     network.set_train(False)
 
     input_data = ms.Tensor(np.zeros([1, 3, 224, 224]), ms.float32)
-    ms.export(network, input_data, file_name=f"{model_name}.mindir", file_format="MINDIR")
+    ms.export(network, input_data, file_name=f"./resources/{model_name}.mindir", file_format="MINDIR")

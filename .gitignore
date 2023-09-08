@@ -132,4 +132,6 @@ build/
 cmake-build-debug/
 cmake-release-debug/
 outputs/
+resources/*
+!/resources/.gitkeep
 kernel_meta*/

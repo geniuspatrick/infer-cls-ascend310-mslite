@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 if [[ $# -lt 2 || $# -gt 3 ]]; then
     echo "Usage: bash ./scripts/run.sh MINDIR_PATH DATASET_PATH [DEVICE_ID]
@@ -53,67 +54,37 @@ fi
 #     echo "Insert LD_LIBRARY_PATH the MindSpore Lite runtime libs path: $RUNTIME_LIBS $TOOLS_HOME/converter/lib"
 # fi
 
-# function convert_model()
-# {
-#     $MS_LITE_HOME/tools/converter/converter/converter_lite --fmk=MINDIR --modelFile=$mindir_path --outputFile=$mindir_path.ms
-# }
-
-function compile_app()
-{
-    if [ $MS_LITE_HOME ];then
-        MINDSPORE_PATH=$MS_LITE_HOME/runtime
-    else
-        MINDSPORE_PATH="`pip show mindspore-ascend | grep Location | awk '{print $2"/mindspore"}' | xargs realpath`"
-        if [[ ! $MINDSPORE_PATH ]];then
-            MINDSPORE_PATH="`pip show mindspore | grep Location | awk '{print $2"/mindspore"}' | xargs realpath`"
-        fi
-    fi
-    if [ -d $build_path ]; then
-        rm -rf $build_path
-    fi
-    mkdir -p $build_path && cd $build_path
-    cmake .. -DMINDSPORE_PATH=$MINDSPORE_PATH
-    make -j8
-    cd ..
-}
-
-function infer()
-{
-    if [ -d $output_path ]; then
-        rm -rf $output_path
-    fi
-    mkdir -p $output_path
-    ./$build_path/main \
-        --mindir_path=$mindir_path --dataset_path=$dataset_path --output_path=$output_path \
-        --device_type=Ascend --device_id=$device_id
-}
-
-function cal_acc()
-{
-    python ./scripts/postprocess.py --dataset_path=$dataset_path --results_path=$output_path
-}
-
+# if [ $MS_LITE_HOME ]; then
 # echo -e "\e[1;36mConverting...\e[0m"
-# convert_model
-# if [ $? -ne 0 ]; then
-#     echo "convert model failed"
-#     exit 1
+# $MS_LITE_HOME/tools/converter/converter/converter_lite --fmk=MINDIR --modelFile=$mindir_path --outputFile=$mindir_path.ms
+# mindir_path="${mindir_path}.ms"
 # fi
+
 echo -e "\e[1;36mCompiling...\e[0m"
-compile_app
-if [ $? -ne 0 ]; then
-    echo "compile app code failed"
-    exit 1
+if [ $MS_LITE_HOME ];then
+    MINDSPORE_PATH=$MS_LITE_HOME/runtime
+else
+    MINDSPORE_PATH="`pip show mindspore-ascend | grep Location | awk '{print $2"/mindspore"}' | xargs realpath`"
+    if [[ ! $MINDSPORE_PATH ]];then
+        MINDSPORE_PATH="`pip show mindspore | grep Location | awk '{print $2"/mindspore"}' | xargs realpath`"
+    fi
 fi
+if [ -d $build_path ]; then
+    rm -rf $build_path
+fi
+mkdir -p $build_path && cd $build_path
+cmake .. -DMINDSPORE_PATH=$MINDSPORE_PATH
+make -j8
+cd ..
+
 echo -e "\e[1;36mInfering...\e[0m"
-infer
-if [ $? -ne 0 ]; then
-    echo " execute inference failed"
-    exit 1
+if [ -d $output_path ]; then
+    rm -rf $output_path
 fi
+mkdir -p $output_path
+./$build_path/main \
+    --mindir_path=$mindir_path --dataset_path=$dataset_path --output_path=$output_path \
+    --device_type=Ascend --device_id=$device_id
+
 echo -e "\e[1;36mCalculating...\e[0m"
-cal_acc
-if [ $? -ne 0 ]; then
-    echo "calculate accuracy failed"
-    exit 1
-fi
+python ./scripts/postprocess.py --dataset_path=$dataset_path --results_path=$output_path
